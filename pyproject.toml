@@ -1,7 +1,7 @@
 [project]
-name = "blender-pipeline"
+name = "blender-auto-render"
 version = "0.1.0"
-description = "Add your description here"
+description = "An automated Blender rendering pipeline designed for CI/CD environments and Docker deployments, featuring AI-generated Blender scripts for procedural 3D content creation."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = []
