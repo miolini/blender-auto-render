@@ -45,6 +45,12 @@ This project uses `uv` for Python environment management. Make sure you have `uv
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
+Before running the pipeline, synchronize the project dependencies:
+
+```bash
+uv sync
+```
+
 ### Getting Help
 
 To see all available command-line options:
@@ -128,10 +134,10 @@ jobs:
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
       - name: Install Blender
         run: |
-          wget https://download.blender.org/release/Blender3.6/blender-3.6.0-linux-x64.tar.xz
-          tar -xf blender-3.6.0-linux-x64.tar.xz
+          wget https://download.blender.org/release/Blender4.4/blender-4.4.3-linux-x64.tar.xz
+          tar -xf blender-4.4.3-linux-x64.tar.xz
       - name: Render Scene
-        run: uv run pipeline.py --blender-path ./blender-3.6.0-linux-x64/blender
+        run: uv run pipeline.py --blender-path ./blender-4.4.3-linux-x64/blender
 ```
 
 ### GitLab CI Example
@@ -143,15 +149,15 @@ stages:
 
 render_animation:
   stage: render
-  image: ubuntu:22.04
+  image: ubuntu:24.04
   before_script:
     - apt-get update && apt-get install -y wget xz-utils curl python3
     - curl -LsSf https://astral.sh/uv/install.sh | sh
     - source $HOME/.cargo/env
-    - wget https://download.blender.org/release/Blender3.6/blender-3.6.0-linux-x64.tar.xz
-    - tar -xf blender-3.6.0-linux-x64.tar.xz
+    - wget https://download.blender.org/release/Blender4.4/blender-4.4.3-linux-x64.tar.xz
+    - tar -xf blender-4.4.3-linux-x64.tar.xz
   script:
-    - uv run pipeline.py --blender-path ./blender-3.6.0-linux-x64/blender
+    - uv run pipeline.py --blender-path ./blender-4.4.3-linux-x64/blender
   artifacts:
     paths:
       - render/
@@ -170,15 +176,15 @@ stages:
 
 render_animation:
   stage: render
-  image: ubuntu:22.04
+  image: ubuntu:24.04
   before_script:
     - apt-get update && apt-get install -y wget xz-utils curl python3
     - curl -LsSf https://astral.sh/uv/install.sh | sh
     - source $HOME/.cargo/env
-    - wget https://download.blender.org/release/Blender3.6/blender-3.6.0-linux-x64.tar.xz
-    - tar -xf blender-3.6.0-linux-x64.tar.xz
+    - wget https://download.blender.org/release/Blender4.4/blender-4.4.3-linux-x64.tar.xz
+    - tar -xf blender-4.4.3-linux-x64.tar.xz
   script:
-    - uv run pipeline.py --blender-path ./blender-3.6.0-linux-x64/blender
+    - uv run pipeline.py --blender-path ./blender-4.4.3-linux-x64/blender
   artifacts:
     paths:
       - render/
@@ -193,7 +199,7 @@ render_animation:
 The pipeline can be containerized for consistent rendering across environments:
 
 ```dockerfile
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 RUN apt-get update && apt-get install -y blender python3 curl
 # Install uv
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -206,7 +212,7 @@ CMD ["uv", "run", "pipeline.py"]
 
 - Python 3.12+
 - `uv` for Python environment management (recommended)
-- Blender 3.6+ (with Python API)
+- Blender 4.4+ (with Python API)
 - FFmpeg (for video encoding)
 
 ### Installation
