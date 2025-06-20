@@ -93,7 +93,7 @@ python pipeline.py \
 
 ### Available Parameters
 
-- `--blender-path`: Path to Blender executable (default: macOS Blender.app path)
+- `--blender-path`: Path to Blender executable (default: `/Applications/Blender.app/Contents/MacOS/Blender` on macOS)
 - `--input-script`: Blender Python script to execute (default: scene.py)
 - `--output-path`: Output video file path (default: render/movie.mkv)
 - `--width`: Render width in pixels (default: 3840)
@@ -103,6 +103,12 @@ python pipeline.py \
 - `--container`: Video container format (default: MKV)
 - `--codec`: Video codec (default: AV1)
 - `--crf`: Constant Rate Factor for quality (default: 20)
+
+### Platform-Specific Notes
+
+**macOS**: The default Blender path is `/Applications/Blender.app/Contents/MacOS/Blender`  
+**Linux**: Typically `/usr/bin/blender` or downloaded from Blender.org  
+**Windows**: Usually `C:\Program Files\Blender Foundation\Blender\blender.exe`
 
 ## CI/CD Integration
 
@@ -126,6 +132,33 @@ jobs:
           tar -xf blender-3.6.0-linux-x64.tar.xz
       - name: Render Scene
         run: uv run pipeline.py --blender-path ./blender-3.6.0-linux-x64/blender
+```
+
+### GitLab CI Example
+
+```yaml
+# .gitlab-ci.yml
+stages:
+  - render
+
+render_animation:
+  stage: render
+  image: ubuntu:22.04
+  before_script:
+    - apt-get update && apt-get install -y wget xz-utils curl python3
+    - curl -LsSf https://astral.sh/uv/install.sh | sh
+    - source $HOME/.cargo/env
+    - wget https://download.blender.org/release/Blender3.6/blender-3.6.0-linux-x64.tar.xz
+    - tar -xf blender-3.6.0-linux-x64.tar.xz
+  script:
+    - uv run pipeline.py --blender-path ./blender-3.6.0-linux-x64/blender
+  artifacts:
+    paths:
+      - render/
+    expire_in: 1 week
+  only:
+    - main
+    - develop
 ```
 
 ### GitLab CI Example
