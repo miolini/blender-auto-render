@@ -1,4 +1,4 @@
-# Blender Pipeline
+# Blender Auto Render
 
 An automated Blender rendering pipeline designed for CI/CD environments and Docker deployments, featuring AI-generated Blender scripts for procedural 3D content creation.
 

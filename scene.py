@@ -6,16 +6,16 @@
 #  (resolution, fps, etc.) are controlled by the external launcher script.
 #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-import bpy
-import bmesh
+import bpy # type: ignore
+import bmesh # type: ignore
 import math
 import random
 from mathutils import Vector
 
 # --- CONFIGURATION PARAMETERS ---
-GRID_SIZE_X = 16
-GRID_SIZE_Y = 16
-GRID_SIZE_Z = 16
+GRID_SIZE_X = 32
+GRID_SIZE_Y = 32
+GRID_SIZE_Z = 32
 CORE_SIZE = 0.4
 ROUTER_SIZE = 0.15
 SPACING = 1.5
@@ -175,10 +175,105 @@ def animate_packet_route(packet, start_frame, start_coord, end_coord, anim_end_f
     packet.keyframe_insert(data_path="hide_viewport", frame=frame_after_z + 1)
     packet.keyframe_insert(data_path="hide_render", frame=frame_after_z + 1)
 
+# --- TEXT ANIMATION FUNCTIONS ---
+
+def create_text_material(name, color, emission_strength=2.0):
+    """Create a material for text with emission to make it visible"""
+    mat = bpy.data.materials.new(name=name)
+    mat.use_nodes = True
+    bsdf = mat.node_tree.nodes["Principled BSDF"]
+    bsdf.inputs['Base Color'].default_value = color
+    bsdf.inputs['Emission Color'].default_value = color
+    bsdf.inputs['Emission Strength'].default_value = emission_strength
+    return mat
+
+def create_animated_text(text_content, position, start_frame, duration, font_size=2.0, material=None):
+    """Create text that fades in and out at specified times"""
+    # Create text object
+    bpy.ops.object.text_add(location=position)
+    text_obj = bpy.context.active_object
+    text_obj.data.body = text_content
+    text_obj.data.size = font_size
+    text_obj.data.align_x = 'CENTER'
+    text_obj.data.align_y = 'CENTER'
+    
+    # Apply material if provided
+    if material:
+        text_obj.data.materials.append(material)
+    
+    # Set initial state (hidden)
+    text_obj.hide_viewport = True
+    text_obj.hide_render = True
+    text_obj.keyframe_insert(data_path="hide_viewport", frame=start_frame - 1)
+    text_obj.keyframe_insert(data_path="hide_render", frame=start_frame - 1)
+    
+    # Show text
+    text_obj.hide_viewport = False
+    text_obj.hide_render = False
+    text_obj.keyframe_insert(data_path="hide_viewport", frame=start_frame)
+    text_obj.keyframe_insert(data_path="hide_render", frame=start_frame)
+    
+    # Hide text after duration
+    end_frame = start_frame + duration
+    text_obj.hide_viewport = True
+    text_obj.hide_render = True
+    text_obj.keyframe_insert(data_path="hide_viewport", frame=end_frame)
+    text_obj.keyframe_insert(data_path="hide_render", frame=end_frame)
+    
+    return text_obj
+
+def create_marketing_text_sequence(anim_end_frame):
+    """Create the sequence of marketing text messages"""
+    print("Creating marketing text sequence...")
+    
+    # Create text collection
+    text_coll = bpy.data.collections.new("MarketingText")
+    bpy.context.scene.collection.children.link(text_coll)
+    
+    # Create text material
+    text_material = create_text_material("TextMaterial", (1.0, 1.0, 1.0, 1.0), emission_strength=3.0)
+    
+    # Calculate grid center for positioning text
+    center = get_core_position((GRID_SIZE_X - 1) / 2.0, (GRID_SIZE_Y - 1) / 2.0, (GRID_SIZE_Z - 1) / 2.0)
+    
+    # Position text in front of and above the grid
+    text_offset = Vector((0, -GRID_SIZE_Y * SPACING * 2.0, GRID_SIZE_Z * SPACING * 1.5))
+    text_position = center + text_offset
+    
+    # Define marketing messages with corrected information
+    messages = [
+        "First 3D Grid Chiplet-Based Processor",
+        "Each Core is a Minimalistic Forth Core",
+        "3D Grid Size is 32×32×32",
+        "Total 32,768 Cores"
+    ]
+    
+    # Calculate timing for each message
+    text_duration = int(anim_end_frame / len(messages) * 0.7)  # Each text visible for 70% of its time slot
+    text_spacing = int(anim_end_frame / len(messages))
+    
+    # Create each text message
+    for i, message in enumerate(messages):
+        start_frame = i * text_spacing + 30  # Start 30 frames into each segment
+        text_obj = create_animated_text(
+            message, 
+            text_position + Vector((0, 0, i * -3)), # Offset each text vertically
+            start_frame, 
+            text_duration,
+            font_size=3.0,
+            material=text_material
+        )
+        text_obj.name = f"MarketingText_{i+1}"
+        # Move to text collection
+        bpy.context.scene.collection.objects.unlink(text_obj)
+        text_coll.objects.link(text_obj)
+    
+    print(f"Created {len(messages)} marketing text messages")
+
 # --- MAIN EXECUTION ---
 
 if __name__ == "__main__":
-    print("--- Starting Scene Generation (v15) ---")
+    print("--- Starting Scene Generation ---")
     clean_scene()
 
     # Note: FPS, Resolution, and Frame Range are now set by the launcher script.
@@ -220,6 +315,9 @@ if __name__ == "__main__":
         packet_mat = random.choice(MAT_PACKETS)
         packet = create_packet(f"Packet_{i}", start_frame, anim_coll, packet_mat)
         animate_packet_route(packet, start_frame, start_coord, end_coord, anim_end_frame)
+
+    # --- Create Marketing Text Sequence ---
+    create_marketing_text_sequence(anim_end_frame)
 
     # --- WIDE ORBITING CAMERA RIG ---
     print("Setting up wide, orbiting camera...")
@@ -270,5 +368,8 @@ if __name__ == "__main__":
     scene.eevee.bloom_threshold = 1.0
     scene.eevee.bloom_intensity = 0.08
     scene.eevee.bloom_radius = 7
+
+    # --- Create Marketing Text Sequence ---
+    create_marketing_text_sequence(anim_end_frame)
 
     print("--- Scene Generation Finished Successfully ---")
