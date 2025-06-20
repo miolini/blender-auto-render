@@ -10,7 +10,7 @@ import bpy # type: ignore
 import bmesh # type: ignore
 import math
 import random
-from mathutils import Vector
+from mathutils import Vector # type: ignore
 
 # --- CONFIGURATION PARAMETERS ---
 GRID_SIZE_X = 32
