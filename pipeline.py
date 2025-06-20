@@ -2,6 +2,39 @@ import subprocess
 import os
 import sys
 import argparse
+import platform
+
+def get_default_blender_path():
+    """
+    Determine the default Blender executable path based on the operating system.
+    """
+    system = platform.system()
+    
+    if system == "Darwin":  # macOS
+        return '/Applications/Blender.app/Contents/MacOS/Blender'
+    elif system == "Windows":
+        # Common Windows installation paths
+        possible_paths = [
+            'C:\\Program Files\\Blender Foundation\\Blender\\blender.exe',
+            'C:\\Program Files (x86)\\Blender Foundation\\Blender\\blender.exe'
+        ]
+        for path in possible_paths:
+            if os.path.exists(path):
+                return path
+        return 'blender'  # Fallback to PATH
+    elif system == "Linux":
+        # Try common Linux paths
+        possible_paths = [
+            '/usr/bin/blender',
+            '/usr/local/bin/blender',
+            '/opt/blender/blender'
+        ]
+        for path in possible_paths:
+            if os.path.exists(path):
+                return path
+        return 'blender'  # Fallback to PATH
+    else:
+        return 'blender'  # Generic fallback
 
 def main():
     """
@@ -10,7 +43,8 @@ def main():
     # --- Argument Parsing ---
     parser = argparse.ArgumentParser(description="Render a Blender scene with specified settings.")
     
-    parser.add_argument('--blender-path', type=str, default='/Applications/Blender.app/Contents/MacOS/Blender', help='Path to the Blender executable.')
+    default_blender_path = get_default_blender_path()
+    parser.add_argument('--blender-path', type=str, default=default_blender_path, help='Path to the Blender executable. (Default: ' + default_blender_path + ')')
     parser.add_argument('--input-script', type=str, default='scene.py', help='Path to the Blender Python script that generates the scene.')
     parser.add_argument('--output-path', type=str, default='render/movie.mkv', help='Path for the final rendered video file.')
     
@@ -26,11 +60,13 @@ def main():
     args = parser.parse_args()
 
     print("--- Starting CI/CD Render Pipeline with CLI Arguments ---")
-    print(f"Configuration: {args}")
+    print("Detected OS: " + platform.system())
+    print("Default Blender path: " + default_blender_path)
+    print("Configuration: " + str(args))
 
     # --- Script Logic ---
     if not os.path.exists(args.input_script):
-        print(f"Error: Input script not found at '{args.input_script}'")
+        print("Error: Input script not found at '" + args.input_script + "'")
         sys.exit(1)
 
     output_dir = os.path.dirname(args.output_path)
@@ -59,13 +95,13 @@ def main():
         "--render-output", render_output_path_arg,
         
         # Use python expressions to inject settings into the Blender scene
-        "--python-expr", f"import bpy; bpy.context.scene.render.resolution_x = {args.width}",
-        "--python-expr", f"import bpy; bpy.context.scene.render.resolution_y = {args.height}",
-        "--python-expr", f"import bpy; bpy.context.scene.render.fps = {args.fps}",
-        "--python-expr", f"import bpy; bpy.context.scene.frame_end = {total_frames}",
-        "--python-expr", f"import bpy; bpy.context.scene.render.ffmpeg.format = '{args.container}'",
-        "--python-expr", f"import bpy; bpy.context.scene.render.ffmpeg.codec = '{args.codec}'",
-        "--python-expr", f"import bpy; bpy.context.scene.render.ffmpeg.constant_rate_factor = '{crf_value}'",
+        "--python-expr", "import bpy; bpy.context.scene.render.resolution_x = " + str(args.width),
+        "--python-expr", "import bpy; bpy.context.scene.render.resolution_y = " + str(args.height),
+        "--python-expr", "import bpy; bpy.context.scene.render.fps = " + str(args.fps),
+        "--python-expr", "import bpy; bpy.context.scene.frame_end = " + str(total_frames),
+        "--python-expr", "import bpy; bpy.context.scene.render.ffmpeg.format = '" + args.container + "'",
+        "--python-expr", "import bpy; bpy.context.scene.render.ffmpeg.codec = '" + args.codec + "'",
+        "--python-expr", "import bpy; bpy.context.scene.render.ffmpeg.constant_rate_factor = '" + crf_value + "'",
         
         "--render-anim"
     ]
@@ -77,11 +113,11 @@ def main():
     try:
         subprocess.run(command, check=True)
         print("--- End of Blender Output ---\n")
-        print(f"✅ Success! Render complete.")
-        print(f"Video saved to: {args.output_path}")
+        print("SUCCESS: Render complete.")
+        print("Video saved to: " + args.output_path)
 
     except FileNotFoundError:
-        print(f"\n--- ERROR: Blender executable not found at '{args.blender_path}'. ---")
+        print("\n--- ERROR: Blender executable not found at '" + args.blender_path + "'. ---")
         sys.exit(1)
         
     except subprocess.CalledProcessError as e:
